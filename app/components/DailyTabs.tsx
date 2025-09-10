@@ -226,10 +226,19 @@ export const DailyTabs: React.FC<DailyTabsProps> = ({ className }) => {
               {hasLayout && (
                 <div className="mt-3 pwc-typography-small text-pwc-gray-light text-center">
                   Last updated:{' '}
-                  {getLayoutForDay(day.key)?.lastModified?.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {(() => {
+                    const layout = getLayoutForDay(day.key);
+                    if (layout?.lastModified) {
+                      const date = layout.lastModified instanceof Date 
+                        ? layout.lastModified 
+                        : new Date(layout.lastModified);
+                      return date.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                    }
+                    return 'Recently';
+                  })()}
                 </div>
               )}
             </motion.div>

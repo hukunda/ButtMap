@@ -10,7 +10,7 @@
 
 2. **Run these commands** (replace YOUR_USERNAME):
    ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/buttmap-pwc-seating.git
+   git remote add origin xxhttps://github.com/YOUR_USERNAME/buttmap-pwc-seating.git
    git branch -M main
    git push -u origin main
    ```

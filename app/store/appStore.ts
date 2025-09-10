@@ -419,7 +419,42 @@ export const useAppStore = create<AppState>()(
         layouts: state.layouts,
         config: state.config,
         currentUser: state.currentUser
-      })
+      }),
+      // Handle date serialization/deserialization
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Convert date strings back to Date objects
+          state.layouts = state.layouts?.map(layout => ({
+            ...layout,
+            createdAt: typeof layout.createdAt === 'string' ? new Date(layout.createdAt) : layout.createdAt,
+            lastModified: typeof layout.lastModified === 'string' ? new Date(layout.lastModified) : layout.lastModified,
+            seats: layout.seats?.map(seat => ({
+              ...seat,
+              lastUpdated: seat.lastUpdated && typeof seat.lastUpdated === 'string' 
+                ? new Date(seat.lastUpdated) 
+                : seat.lastUpdated
+            })) || []
+          })) || [];
+          
+          if (state.currentLayout) {
+            state.currentLayout = {
+              ...state.currentLayout,
+              createdAt: typeof state.currentLayout.createdAt === 'string' 
+                ? new Date(state.currentLayout.createdAt) 
+                : state.currentLayout.createdAt,
+              lastModified: typeof state.currentLayout.lastModified === 'string' 
+                ? new Date(state.currentLayout.lastModified) 
+                : state.currentLayout.lastModified,
+              seats: state.currentLayout.seats?.map(seat => ({
+                ...seat,
+                lastUpdated: seat.lastUpdated && typeof seat.lastUpdated === 'string' 
+                  ? new Date(seat.lastUpdated) 
+                  : seat.lastUpdated
+              })) || []
+            };
+          }
+        }
+      }
     }
   )
 );

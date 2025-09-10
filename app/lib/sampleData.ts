@@ -33,6 +33,7 @@ export const sampleNames = {
 };
 
 export const populateLayoutWithSampleData = (seats: Seat[]): Seat[] => {
+  const now = new Date();
   return seats.map(seat => {
     const sampleName = sampleNames[seat.coordinate as keyof typeof sampleNames];
     if (sampleName) {
@@ -40,7 +41,7 @@ export const populateLayoutWithSampleData = (seats: Seat[]): Seat[] => {
         ...seat,
         occupiedBy: sampleName,
         occupiedById: 'sample-user',
-        lastUpdated: new Date()
+        lastUpdated: now
       };
     }
     return seat;
