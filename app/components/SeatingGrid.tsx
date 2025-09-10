@@ -66,8 +66,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
     return currentLayout.seats.find(seat => seat.coordinate === coordinate);
   };
 
-  // Render individual seat
-  const renderSeat = (coordinate: string, isOpsTeam = false) => {
+  // Render a single-person table (simplified version)
+  const renderSingleTable = (coordinate: string, isOpsTeam: boolean = false, facingDirection: 'forward' | 'backward' = 'forward') => {
     const seat = getSeatByCoordinate(coordinate);
     if (!seat) return null;
 
@@ -79,17 +79,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
         key={seat.id}
         className={clsx(
           'relative cursor-pointer transition-all duration-300 group',
-          'rounded-xl p-3 min-h-[70px] flex flex-col justify-between',
-          'shadow-md hover:shadow-lg backdrop-blur-sm',
-          // Seat styling based on type and occupancy
-          isOpsTeam && !isOccupied && 'bg-gradient-to-br from-purple-100 to-indigo-100 border-2 border-purple-300',
-          isOpsTeam && isOccupied && 'bg-gradient-to-br from-purple-200 to-indigo-200 border-2 border-purple-400',
-          !isOpsTeam && !isOccupied && 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200',
-          !isOpsTeam && isOccupied && 'bg-gradient-to-br from-blue-100 to-cyan-100 border-2 border-blue-300',
-          // Hover effects
-          canEdit && 'hover:scale-105 hover:z-10',
-          !canEdit && 'cursor-not-allowed opacity-70',
-          selectedSeat === seat.id && 'ring-4 ring-orange-400 ring-opacity-50 scale-105 z-20'
+          'rounded-2xl p-3 shadow-xl border-3',
+          isOpsTeam 
+            ? "bg-gradient-to-br from-purple-200 via-indigo-200 to-purple-300 border-purple-400" 
+            : "bg-gradient-to-br from-gray-200 via-slate-200 to-gray-300 border-gray-400",
+          canEdit && "hover:scale-105 hover:shadow-2xl",
+          !canEdit && "cursor-not-allowed opacity-70",
+          facingDirection === 'backward' && "transform rotate-180"
         )}
         onClick={canEdit ? () => handleSeatClick(seat) : undefined}
         whileHover={canEdit ? { 
@@ -101,96 +97,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: Math.random() * 0.1 }}
       >
-        {/* Seat Surface */}
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-md rounded-xl border border-white/20"></div>
-        
-        {/* Seat Content */}
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-1">
-            <span className={clsx(
-              "px-2 py-1 rounded-full text-xs font-bold",
-              isOpsTeam ? "bg-purple-500 text-white" : "bg-gray-600 text-white"
-            )}>
-              {coordinate}
-            </span>
-            {isOpsTeam && (
-              <div className="bg-purple-600 text-white px-1 py-0.5 rounded text-xs font-bold">
-                OPS
-              </div>
-            )}
-          </div>
-          
-          {/* Person info */}
-          <div>
-            {isOccupied ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-white/30">
-                <div className="flex items-center space-x-2">
-                  <div className={clsx(
-                    "w-2 h-2 rounded-full",
-                    isOpsTeam ? "bg-purple-500" : "bg-blue-500"
-                  )}></div>
-                  <span className="text-xs font-semibold text-gray-800 truncate">
-                    {seat.occupiedBy}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-1.5 border border-white/20 text-center">
-                <span className="text-xs text-gray-500 font-medium">Available</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Status indicator dot */}
-        <div className={clsx(
-          "absolute top-2 right-2 w-2 h-2 rounded-full border border-white shadow-sm",
-          isOccupied 
-            ? (isOpsTeam ? "bg-purple-500" : "bg-green-500")
-            : "bg-gray-300"
-        )}></div>
-
-        {/* Selected state glow */}
-        {selectedSeat === seat.id && (
-          <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-xl blur opacity-75"></div>
-        )}
-      </motion.div>
-    );
-  };
-
-  // Render a single-person table
-  const renderSingleTable = (coordinate: string, tableNumber: number, isOpsTeam = false, facingDirection: 'forward' | 'backward' = 'forward') => {
-    const seat = getSeatByCoordinate(coordinate);
-    if (!seat) return null;
-
-    const canEdit = !seat.isLocked || currentUser?.role === 'admin';
-    const isOccupied = !!seat.occupiedBy;
-
-    return (
-      <motion.div
-        key={`table-${coordinate}`}
-        className={clsx(
-          "relative",
-          facingDirection === 'backward' && "transform rotate-180"
-        )}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: Math.random() * 0.3 }}
-      >
-        {/* Single Person Table */}
-        <div className={clsx(
-          "rounded-2xl p-3 shadow-xl border-3 cursor-pointer transition-all duration-300 group",
-          isOpsTeam 
-            ? "bg-gradient-to-br from-purple-200 via-indigo-200 to-purple-300 border-purple-400" 
-            : "bg-gradient-to-br from-gray-200 via-slate-200 to-gray-300 border-gray-400",
-          canEdit && "hover:scale-105 hover:shadow-2xl",
-          !canEdit && "cursor-not-allowed opacity-70"
-        )}
-        onClick={canEdit ? () => handleSeatClick(seat) : undefined}
-      >
         {/* Table Surface */}
         <div className={clsx(
-          "rounded-xl p-3 mb-2 shadow-inner border-2 relative",
+          "rounded-xl p-3 mb-2 shadow-inner border-2",
           isOpsTeam
             ? "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200"
             : "bg-gradient-to-br from-white to-gray-50 border-gray-200",
@@ -208,9 +117,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
           
           {/* Seat Area */}
           <div className={clsx(
-            'rounded-lg p-3 min-h-[60px] flex flex-col justify-center items-center transition-all duration-300',
-            'shadow-md backdrop-blur-sm',
-            // Seat styling based on type and occupancy
+            'rounded-lg p-3 min-h-[60px] flex flex-col justify-center items-center',
+            'shadow-md backdrop-blur-sm transition-all duration-300',
             isOpsTeam && !isOccupied && 'bg-gradient-to-br from-purple-100 to-indigo-100 border-2 border-purple-300',
             isOpsTeam && isOccupied && 'bg-gradient-to-br from-purple-200 to-indigo-200 border-2 border-purple-400',
             !isOpsTeam && !isOccupied && 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200',
@@ -251,7 +159,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
           </div>
         </div>
         
-        {/* Table Legs (decorative) */}
+        {/* Table Legs */}
         <div className="flex justify-between px-3">
           <div className={clsx(
             "w-2 h-4 rounded-b-lg shadow-sm",
@@ -268,21 +176,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
           <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-75"></div>
         )}
       </motion.div>
-    );
-  };
-
-  // Render a group of 3 tables facing the same direction
-  const renderTableGroup = (lineNumber: number, startPosition: number, facingDirection: 'forward' | 'backward', isOpsTeam = false) => {
-    return (
-      <div className={clsx(
-        "flex gap-3",
-        facingDirection === 'backward' && "flex-row-reverse"
-      )}>
-        {[1, 2, 3].map((offset) => {
-          const coordinate = `${lineNumber}.${startPosition + offset - 1}`;
-          return renderSingleTable(coordinate, startPosition + offset - 1, isOpsTeam, facingDirection);
-        })}
-      </div>
     );
   };
 
@@ -368,7 +261,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                         Tables 1-3 (Facing Forward)
                       </span>
                     </div>
-                    {renderTableGroup(0, 1, 'forward', true)}
+                    <div className="flex gap-3 justify-center">
+                      {renderSingleTable('0.1', true, 'forward')}
+                      {renderSingleTable('0.2', true, 'forward')}
+                      {renderSingleTable('0.3', true, 'forward')}
+                    </div>
                     
                     {/* Aisle space */}
                     <div className="h-4 border-t border-dashed border-purple-300 relative">
@@ -383,7 +280,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                         Tables 4-6 (Facing Backward)
                       </span>
                     </div>
-                    {renderTableGroup(0, 4, 'backward', true)}
+                    <div className="flex gap-3 justify-center">
+                      {renderSingleTable('0.4', true, 'backward')}
+                      {renderSingleTable('0.5', true, 'backward')}
+                      {renderSingleTable('0.6', true, 'backward')}
+                    </div>
                   </div>
                 </div>
 
@@ -412,7 +313,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                           Tables 1-3 (Facing Forward)
                         </span>
                       </div>
-                      {renderTableGroup(lineNum, 1, 'forward', false)}
+                      <div className="flex gap-3 justify-center">
+                        {renderSingleTable(`${lineNum}.1`, false, 'forward')}
+                        {renderSingleTable(`${lineNum}.2`, false, 'forward')}
+                        {renderSingleTable(`${lineNum}.3`, false, 'forward')}
+                      </div>
                       
                       {/* Aisle space */}
                       <div className="h-4 border-t border-dashed border-blue-300 relative">
@@ -427,7 +332,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                           Tables 4-6 (Facing Backward)
                         </span>
                       </div>
-                      {renderTableGroup(lineNum, 4, 'backward', false)}
+                      <div className="flex gap-3 justify-center">
+                        {renderSingleTable(`${lineNum}.4`, false, 'backward')}
+                        {renderSingleTable(`${lineNum}.5`, false, 'backward')}
+                        {renderSingleTable(`${lineNum}.6`, false, 'backward')}
+                      </div>
                     </div>
                   </div>
                 ))}
