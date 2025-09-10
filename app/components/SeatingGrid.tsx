@@ -158,62 +158,131 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
     );
   };
 
-  // Render a table with 2 seats
-  const renderTable = (lineNumber: number, tableNumber: number, isOpsTeam = false) => {
-    const seat1Coordinate = `${lineNumber}.${tableNumber * 2 - 1}`;
-    const seat2Coordinate = `${lineNumber}.${tableNumber * 2}`;
-    
+  // Render a single-person table
+  const renderSingleTable = (coordinate: string, tableNumber: number, isOpsTeam = false, facingDirection: 'forward' | 'backward' = 'forward') => {
+    const seat = getSeatByCoordinate(coordinate);
+    if (!seat) return null;
+
+    const canEdit = !seat.isLocked || currentUser?.role === 'admin';
+    const isOccupied = !!seat.occupiedBy;
+
     return (
       <motion.div
-        key={`table-${lineNumber}-${tableNumber}`}
-        className="relative"
+        key={`table-${coordinate}`}
+        className={clsx(
+          "relative",
+          facingDirection === 'backward' && "transform rotate-180"
+        )}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: (lineNumber * 0.1) + (tableNumber * 0.05) }}
+        transition={{ duration: 0.4, delay: Math.random() * 0.3 }}
       >
-        {/* Table Base/Surface */}
+        {/* Single Person Table */}
         <div className={clsx(
-          "rounded-3xl p-4 shadow-2xl border-4",
+          "rounded-2xl p-3 shadow-xl border-3 cursor-pointer transition-all duration-300 group",
           isOpsTeam 
             ? "bg-gradient-to-br from-purple-200 via-indigo-200 to-purple-300 border-purple-400" 
-            : "bg-gradient-to-br from-gray-200 via-slate-200 to-gray-300 border-gray-400"
+            : "bg-gradient-to-br from-gray-200 via-slate-200 to-gray-300 border-gray-400",
+          canEdit && "hover:scale-105 hover:shadow-2xl",
+          !canEdit && "cursor-not-allowed opacity-70"
+        )}
+        onClick={canEdit ? () => handleSeatClick(seat) : undefined}
+      >
+        {/* Table Surface */}
+        <div className={clsx(
+          "rounded-xl p-3 mb-2 shadow-inner border-2 relative",
+          isOpsTeam
+            ? "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200"
+            : "bg-gradient-to-br from-white to-gray-50 border-gray-200",
+          facingDirection === 'backward' && "transform rotate-180"
         )}>
-          {/* Table Top Surface */}
-          <div className={clsx(
-            "rounded-2xl p-4 mb-3 shadow-inner border-2",
-            isOpsTeam
-              ? "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200"
-              : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-          )}>
-            <div className="text-center mb-2">
-              <span className={clsx(
-                "px-3 py-1 rounded-full text-sm font-bold",
-                isOpsTeam ? "bg-purple-600 text-white" : "bg-gray-600 text-white"
-              )}>
-                Table {tableNumber}
-              </span>
-            </div>
-            
-            {/* Two seats side by side */}
-            <div className="grid grid-cols-2 gap-3">
-              {renderSeat(seat1Coordinate, isOpsTeam)}
-              {renderSeat(seat2Coordinate, isOpsTeam)}
-            </div>
+          {/* Table Number */}
+          <div className="text-center mb-2">
+            <span className={clsx(
+              "px-2 py-1 rounded-full text-xs font-bold",
+              isOpsTeam ? "bg-purple-600 text-white" : "bg-gray-600 text-white"
+            )}>
+              {coordinate}
+            </span>
           </div>
           
-          {/* Table Legs (decorative) */}
-          <div className="flex justify-between px-4">
-            <div className={clsx(
-              "w-3 h-6 rounded-b-lg shadow-md",
-              isOpsTeam ? "bg-purple-400" : "bg-gray-400"
-            )}></div>
-            <div className={clsx(
-              "w-3 h-6 rounded-b-lg shadow-md",
-              isOpsTeam ? "bg-purple-400" : "bg-gray-400"
-            )}></div>
+          {/* Seat Area */}
+          <div className={clsx(
+            'rounded-lg p-3 min-h-[60px] flex flex-col justify-center items-center transition-all duration-300',
+            'shadow-md backdrop-blur-sm',
+            // Seat styling based on type and occupancy
+            isOpsTeam && !isOccupied && 'bg-gradient-to-br from-purple-100 to-indigo-100 border-2 border-purple-300',
+            isOpsTeam && isOccupied && 'bg-gradient-to-br from-purple-200 to-indigo-200 border-2 border-purple-400',
+            !isOpsTeam && !isOccupied && 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200',
+            !isOpsTeam && isOccupied && 'bg-gradient-to-br from-blue-100 to-cyan-100 border-2 border-blue-300',
+            selectedSeat === seat.id && 'ring-4 ring-orange-400 ring-opacity-50'
+          )}>
+            {isOpsTeam && (
+              <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold mb-1">
+                OPS
+              </div>
+            )}
+            
+            {isOccupied ? (
+              <div className="text-center">
+                <div className={clsx(
+                  "w-3 h-3 rounded-full mx-auto mb-1",
+                  isOpsTeam ? "bg-purple-500" : "bg-blue-500"
+                )}></div>
+                <span className="text-xs font-semibold text-gray-800">
+                  {seat.occupiedBy}
+                </span>
+              </div>
+            ) : (
+              <div className="text-center">
+                <span className="text-xs text-gray-500 font-medium">Available</span>
+              </div>
+            )}
+          </div>
+
+          {/* Direction indicator */}
+          <div className={clsx(
+            "absolute top-1 right-1",
+            facingDirection === 'forward' ? "text-green-500" : "text-blue-500"
+          )}>
+            <span className="text-xs">
+              {facingDirection === 'forward' ? '↑' : '↓'}
+            </span>
           </div>
         </div>
+        
+        {/* Table Legs (decorative) */}
+        <div className="flex justify-between px-3">
+          <div className={clsx(
+            "w-2 h-4 rounded-b-lg shadow-sm",
+            isOpsTeam ? "bg-purple-400" : "bg-gray-400"
+          )}></div>
+          <div className={clsx(
+            "w-2 h-4 rounded-b-lg shadow-sm",
+            isOpsTeam ? "bg-purple-400" : "bg-gray-400"
+          )}></div>
+        </div>
+
+        {/* Selected state glow */}
+        {selectedSeat === seat.id && (
+          <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-75"></div>
+        )}
       </motion.div>
+    );
+  };
+
+  // Render a group of 3 tables facing the same direction
+  const renderTableGroup = (lineNumber: number, startPosition: number, facingDirection: 'forward' | 'backward', isOpsTeam = false) => {
+    return (
+      <div className={clsx(
+        "flex gap-3",
+        facingDirection === 'backward' && "flex-row-reverse"
+      )}>
+        {[1, 2, 3].map((offset) => {
+          const coordinate = `${lineNumber}.${startPosition + offset - 1}`;
+          return renderSingleTable(coordinate, startPosition + offset - 1, isOpsTeam, facingDirection);
+        })}
+      </div>
     );
   };
 
@@ -255,13 +324,19 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-3 text-center shadow-lg text-white">
                   <div className="text-sm font-bold">Line 0</div>
                   <div className="text-xs">OPS Reserved</div>
-                  <div className="text-xs">3 Tables</div>
+                  <div className="text-xs">6 Single Tables</div>
                 </div>
                 
                 <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl p-3 text-center shadow-lg text-white">
                   <div className="text-sm font-bold">Lines 1-5</div>
                   <div className="text-xs">General Access</div>
-                  <div className="text-xs">15 Tables</div>
+                  <div className="text-xs">30 Single Tables</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-3 text-center shadow-lg text-white">
+                  <div className="text-sm font-bold">Layout</div>
+                  <div className="text-xs">3 Forward ↑</div>
+                  <div className="text-xs">3 Backward ↓</div>
                 </div>
               </div>
             </div>
@@ -285,9 +360,30 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                     </div>
                   </div>
                   
-                  {/* Tables for Line 0 */}
-                  <div className="flex-1 grid grid-cols-3 gap-6">
-                    {[1, 2, 3].map(tableNum => renderTable(0, tableNum, true))}
+                  {/* Tables for Line 0 - 6 single-person tables */}
+                  <div className="flex-1 space-y-4">
+                    {/* 3 tables facing forward */}
+                    <div className="text-center mb-2">
+                      <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                        Tables 1-3 (Facing Forward)
+                      </span>
+                    </div>
+                    {renderTableGroup(0, 1, 'forward', true)}
+                    
+                    {/* Aisle space */}
+                    <div className="h-4 border-t border-dashed border-purple-300 relative">
+                      <span className="absolute left-1/2 transform -translate-x-1/2 -top-3 bg-purple-100 px-3 py-1 rounded-full text-xs text-purple-600 font-semibold">
+                        AISLE
+                      </span>
+                    </div>
+                    
+                    {/* 3 tables facing backward */}
+                    <div className="text-center mb-2">
+                      <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                        Tables 4-6 (Facing Backward)
+                      </span>
+                    </div>
+                    {renderTableGroup(0, 4, 'backward', true)}
                   </div>
                 </div>
 
@@ -308,9 +404,30 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                       </div>
                     </div>
                     
-                    {/* Tables for this line */}
-                    <div className="flex-1 grid grid-cols-3 gap-6">
-                      {[1, 2, 3].map(tableNum => renderTable(lineNum, tableNum, false))}
+                    {/* Tables for this line - 6 single-person tables */}
+                    <div className="flex-1 space-y-4">
+                      {/* 3 tables facing forward */}
+                      <div className="text-center mb-2">
+                        <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                          Tables 1-3 (Facing Forward)
+                        </span>
+                      </div>
+                      {renderTableGroup(lineNum, 1, 'forward', false)}
+                      
+                      {/* Aisle space */}
+                      <div className="h-4 border-t border-dashed border-blue-300 relative">
+                        <span className="absolute left-1/2 transform -translate-x-1/2 -top-3 bg-blue-100 px-3 py-1 rounded-full text-xs text-blue-600 font-semibold">
+                          AISLE
+                        </span>
+                      </div>
+                      
+                      {/* 3 tables facing backward */}
+                      <div className="text-center mb-2">
+                        <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                          Tables 4-6 (Facing Backward)
+                        </span>
+                      </div>
+                      {renderTableGroup(lineNum, 4, 'backward', false)}
                     </div>
                   </div>
                 ))}
@@ -416,7 +533,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
           <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Office Analytics Dashboard
           </h3>
-          <p className="text-gray-600">Real-time workspace and table utilization metrics</p>
+          <p className="text-gray-600">Real-time single-person table utilization metrics</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -427,9 +544,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
             transition={{ duration: 0.2 }}
           >
             <div className="text-4xl mb-2">🪑</div>
-            <div className="text-3xl font-bold mb-1">18</div>
-            <div className="text-indigo-100 font-medium">Total Tables</div>
-            <div className="text-xs text-indigo-200 mt-1">6 lines × 3 tables</div>
+            <div className="text-3xl font-bold mb-1">36</div>
+            <div className="text-indigo-100 font-medium">Single Tables</div>
+            <div className="text-xs text-indigo-200 mt-1">6 lines × 6 tables</div>
           </motion.div>
 
           {/* Available Seats */}
@@ -502,19 +619,23 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
         {/* Additional insights */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
-            <h4 className="font-bold text-gray-800 mb-3">📋 Table Layout</h4>
+            <h4 className="font-bold text-gray-800 mb-3">📋 Single-Person Table Layout</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Line 0 (OPS):</span>
-                <span className="font-semibold text-purple-600">3 Tables</span>
+                <span className="font-semibold text-purple-600">6 Tables</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Lines 1-5 (General):</span>
-                <span className="font-semibold text-blue-600">15 Tables</span>
+                <span className="font-semibold text-blue-600">30 Tables</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Capacity:</span>
                 <span className="font-semibold">36 Seats</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Layout per Line:</span>
+                <span className="font-semibold">3 ↑ + 3 ↓</span>
               </div>
             </div>
           </div>
@@ -534,23 +655,39 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({ className }) => {
                   {currentLayout.seats.filter(s => !s.coordinate.startsWith('0.') && s.occupiedBy).length}/{currentLayout.seats.filter(s => !s.coordinate.startsWith('0.')).length} seats
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Forward Facing (↑):</span>
+                <span className="font-semibold">18 tables</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Backward Facing (↓):</span>
+                <span className="font-semibold">18 tables</span>
+              </div>
             </div>
           </div>
 
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
-            <h4 className="font-bold text-gray-800 mb-3">📈 Status Legend</h4>
+            <h4 className="font-bold text-gray-800 mb-3">📈 Status & Direction Legend</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>Available for assignment</span>
+                <span>Available single table</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span>OPS Team reserved area</span>
+                <span>OPS Team reserved table</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                 <span>Currently occupied</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-green-600 font-bold">↑</span>
+                <span>Forward facing tables</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-600 font-bold">↓</span>
+                <span>Backward facing tables</span>
               </div>
             </div>
           </div>
