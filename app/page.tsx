@@ -13,9 +13,9 @@ export default function Home() {
   const { currentUser, config } = useAppStore();
 
   return (
-    <div className="min-h-screen bg-pwc-off-white">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
       {/* Header */}
-      <header className="pwc-header pwc-shadow-sm">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             {/* Logo and Title */}
@@ -25,15 +25,15 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="bg-pwc-orange p-3 flex items-center justify-center">
-                <MapPin className="w-7 h-7 text-pwc-white" />
+              <div className="bg-gradient-to-br from-orange-400 to-red-500 p-4 rounded-2xl shadow-lg">
+                <MapPin className="w-8 h-8 text-white" />
               </div>
               
               <div>
-                <h1 className="pwc-typography-h1 text-pwc-black">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-red-500 to-purple-600 bg-clip-text text-transparent">
                   ButtMap
                 </h1>
-                <p className="pwc-typography-body text-pwc-gray">Office Seating Management System</p>
+                <p className="text-gray-600 font-medium">Modern Office Workspace Manager</p>
               </div>
             </motion.div>
 

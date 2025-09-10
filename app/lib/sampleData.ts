@@ -5,9 +5,13 @@ import { Seat } from '../types';
  */
 
 export const sampleNames = {
-  '0.1': 'Lucie',
-  '0.2': 'Emma',
-  '0.4': 'Veronika',
+  // OPS Team Reserved Area (0.1-0.6) 
+  '0.1': 'Alex Chen (OPS)',
+  '0.2': 'Sarah Kim (OPS)',
+  '0.3': 'Mike Rodriguez (OPS)',
+  '0.5': 'Lisa Zhang (OPS)',
+  
+  // General Seating Area (1.1-5.6)
   '1.2': 'Lynne Wang',
   '1.3': 'Shahir',
   '1.4': 'Henry Ye',
@@ -25,9 +29,12 @@ export const sampleNames = {
   '3.4': 'Marie',
   '3.6': 'Martin F',
   '4.1': 'JirkaT',
+  '4.2': 'Emma',
   '4.4': 'Andrea Cecrdlova',
+  '4.5': 'Lucie',
   '5.1': 'Ales Riha',
   '5.2': 'Karel H.',
+  '5.3': 'Veronika',
   '5.4': 'Kuchto',
   '5.5': 'Maria'
 };
